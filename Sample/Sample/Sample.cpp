@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "kinect_grabber.h"
+#include "kinect2_grabber.h"
 #include <pcl/visualization/cloud_viewer.h>
 
 
@@ -12,15 +12,15 @@ int _tmain( int argc, _TCHAR* argv[] )
 	pcl::visualization::CloudViewer viewer( "Point Cloud Viewer" );
 
 	// Callback Function to be called when Updating Data
-	boost::function<void( const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& )> function =
-		[&viewer]( const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud ){
+	boost::function<void( const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& )> function =
+		[&viewer]( const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud ){
 		if( !viewer.wasStopped() ){
 			viewer.showCloud( cloud );
 		}
 	};
 
 	// Create KinectGrabber
-	pcl::Grabber* grabber = new pcl::KinectGrabber();
+	pcl::Grabber* grabber = new pcl::Kinect2Grabber();
 
 	// Regist Callback Function
 	grabber->registerCallback( function );
