@@ -94,22 +94,13 @@ namespace pcl
         , signal_PointXYZRGB( nullptr )
     {
         // Create Sensor Instance
-        auto result = ::GetDefaultKinectSensor( &sensor );
-        if ( FAILED( result ) ){
-            throw std::exception( "Exception : GetDefaultKinectSensor" );
-        }
+        ERROR_CHECK( ::GetDefaultKinectSensor( &sensor ) );
 
         // Open Sensor
-        result = sensor->Open();
-        if ( FAILED( result ) ){
-            throw std::exception( "Exception : IKinectSensor::Open" );
-        }
+        ERROR_CHECK( sensor->Open() );
 
         // Retrieved Coordinate Mapper
-        result = sensor->get_CoordinateMapper( &mapper );
-        if ( FAILED( result ) ){
-            throw std::exception( "Exception : IKinectSensor::get_CoordinateMapper" );
-        }
+        ERROR_CHECK( sensor->get_CoordinateMapper( &mapper ) );
 
         // Retrieved Image Size from Stream Resolution
         ComPtr<IColorFrameSource> colorFrameSource;
@@ -280,43 +271,45 @@ namespace pcl
     {
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud( new pcl::PointCloud<pcl::PointXYZRGB>() );
 
-        //cloud->width = static_cast<uint32_t>(width);
-        //cloud->height = static_cast<uint32_t>(height);
-        //cloud->is_dense = false;
+        cloud->width = static_cast<uint32_t>(depthWidth);
+        cloud->height = static_cast<uint32_t>(depthHeight);
+        cloud->is_dense = false;
 
-        //NUI_DEPTH_IMAGE_PIXEL* depthPixel = reinterpret_cast<NUI_DEPTH_IMAGE_PIXEL*>(depthLockedRect->pBits);
+        for ( int y = 0; y < depthHeight; y++ ){
+            for ( int x = 0; x < depthWidth; x++ ){
+                pcl::PointXYZRGB point;
 
-        //for ( int y = 0; y < height; y++ ){
-        //    for ( int x = 0; x < width; x++ ){
-        //        pcl::PointXYZRGB point;
+                DepthSpacePoint depthPoint;
+                depthPoint.X = x;
+                depthPoint.Y = y;
 
-        //        NUI_DEPTH_IMAGE_POINT depthPoint;
-        //        depthPoint.x = x;
-        //        depthPoint.y = y;
-        //        depthPoint.depth = depthPixel[y * width + x].depth;
+                auto depth = depthBuffer[y * depthWidth + x];
 
-        //        // Coordinate Mapping Depth to Real Space, and Setting PointCloud XYZ
-        //        Vector4 skeletonPoint;
-        //        mapper->MapDepthPointToSkeletonPoint( NUI_IMAGE_RESOLUTION_640x480, &depthPoint, &skeletonPoint );
+                // Coordinate Mapping Depth to Real Space, and Setting PointCloud XYZ
+                CameraSpacePoint cameraPoint;
+                mapper->MapDepthPointToCameraSpace( depthPoint, depth, &cameraPoint );
 
-        //        point.x = skeletonPoint.x;
-        //        point.y = skeletonPoint.y;
-        //        point.z = skeletonPoint.z;
+                point.x = cameraPoint.X;
+                point.y = cameraPoint.Y;
+                point.z = cameraPoint.Z;
 
-        //        // Coordinate Mapping Depth to Color Space, and Setting PointCloud RGB
-        //        NUI_COLOR_IMAGE_POINT colorPoint;
-        //        mapper->MapDepthPointToColorPoint( NUI_IMAGE_RESOLUTION_640x480, &depthPoint, NUI_IMAGE_TYPE_COLOR, NUI_IMAGE_RESOLUTION_640x480, &colorPoint );
+                // Coordinate Mapping Depth to Color Space, and Setting PointCloud RGB
+                ColorSpacePoint colorPoint;
+                mapper->MapDepthPointToColorSpace( depthPoint, depth, &colorPoint );
 
-        //        if ( 0 <= colorPoint.x && colorPoint.x < width && 0 <= colorPoint.y && colorPoint.y < height ){
-        //            unsigned int index = colorPoint.y * colorLockedRect->Pitch + colorPoint.x * 4;
-        //            point.b = colorLockedRect->pBits[index + 0];
-        //            point.g = colorLockedRect->pBits[index + 1];
-        //            point.r = colorLockedRect->pBits[index + 2];
-        //        }
+                int colorX = (int)colorPoint.X;
+                int colotY = (int)colorPoint.Y;
 
-        //        cloud->push_back( point );
-        //    }
-        //}
+                if ( (0 <= colorX) && (colorX < colorWidth) && (0 <= colotY) && (colotY < colorHeight) ){
+                    unsigned int index = ((colotY * colorWidth) + colorX) * colorBytesPerPixel;
+                    point.b = colorBuffer[index + 0];
+                    point.g = colorBuffer[index + 1];
+                    point.r = colorBuffer[index + 2];
+                }
+
+                cloud->push_back( point );
+            }
+        }
 
         return cloud;
     }

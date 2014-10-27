@@ -11,13 +11,23 @@ int _tmain( int argc, _TCHAR* argv[] )
 	// Create Cloud Viewer
 	pcl::visualization::CloudViewer viewer( "Point Cloud Viewer" );
 
-	// Callback Function to be called when Updating Data
-	boost::function<void( const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& )> function =
-		[&viewer]( const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud ){
-		if( !viewer.wasStopped() ){
-			viewer.showCloud( cloud );
-		}
-	};
+#if 0
+    // Callback Function to be called when Updating Data(Depth)
+    boost::function<void( const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& )> function =
+        [&viewer]( const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud ){
+        if ( !viewer.wasStopped() ){
+            viewer.showCloud( cloud );
+        }
+    };
+#else
+    // Callback Function to be called when Updating Data(RGB-D)
+    boost::function<void( const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& )> function =
+        [&viewer]( const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud ){
+        if ( !viewer.wasStopped() ){
+            viewer.showCloud( cloud );
+        }
+    };
+#endif
 
 	// Create KinectGrabber
 	pcl::Grabber* grabber = new pcl::Kinect2Grabber();
